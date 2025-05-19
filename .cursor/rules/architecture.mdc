@@ -1,0 +1,111 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+## Overview
+
+The extension follows a modular design with a clear separation of concerns, aligning with an MVC-like pattern:
+
+*   **Model:** Manages application data, state, and business logic.
+*   **View:** Presents information to the user and captures user input.
+*   **Controller:** Mediates between the Model and the View, processing user actions and updating the state.
+
+## Core Components
+
+### 1. Model
+
+*   **`StateController.ts` (`src/core/StateController.ts`):**
+    *   The central hub for managing the runtime `ApplicationState` (defined in `src/common/types.ts`).
+    *   Provides methods to get (deep copy) and update the state.
+    *   Uses a `vscode.EventEmitter` (`_onDidChangeState`) to notify subscribers (primarily Views) about state changes.
+    *   Ensures a single source of truth for application state.
+    *   **Path Management:** Extension state managed by `StateController` uses **absolute paths**.
+
+*   **`ExtensionKeyValueStore.ts` (`src/core/ExtensionKeyValueStore.ts`):**
+    *   Handles persistence of data like user settings, API keys, and test file mappings using VS Code's `Memento` API (global/workspace state).
+
+*   **`types.ts` (`src/common/types.ts`):**
+    *   Defines TypeScript interfaces and types for the application state (`ApplicationState`), message payloads between webview and extension, and other shared data structures.
+
+*   **AI Agents (`src/agent/CodexAgent.ts`, `src/agent/OpenAIAgent.ts`):**
+    *   Encapsulate logic for interacting with external AI services (e.g., for test generation, autofix). They can be considered part of the model layer as they provide data and perform core business operations.
+
+*   **Services (`src/features/*/Service.ts` e.g., `TestGenerationService.ts`, `TestRunnerService.ts`):**
+    *   Contain specific business logic related to features. They are called by Controllers and interact with Agents or `StateController` as needed.
+
+### 2. View
+
+*   **`Sidebar.ts` (`src/features/sidebar/Sidebar.ts`):**
+    *   The primary user interface, implemented as a VS Code WebviewView.
+    *   Responsible for rendering HTML (from `media/sidebar/html/sidebar.html`) and handling user interactions within the webview.
+    *   Communicates with the extension side via messages (`postMessage` and `onDidReceiveMessage`).
+    *   Subscribes to state changes from `StateController` to reactively update its content.
+    *   **Path Management:** When sending data to the extension (e.g., a file path selected by the user), it may use **relative paths**. The webview's JavaScript is responsible for interpreting state data (which uses absolute paths) for display, potentially converting paths to relative for UI purposes if needed.
+
+*   **`GenerateTestCodeLensProvider.ts` (`src/features/testGeneration/GenerateTestCodeLensProvider.ts`):**
+    *   Provides "Generate Test" CodeLens actions directly in the editor, acting as another, simpler view component.
+
+### 3. Controller
+
+*   **Feature Controllers (`src/features/*/Controller.ts` e.g., `TestGenerationController.ts`, `TestRunnerController.ts`):**
+    *   Handle logic specific to their features.
+    *   Instantiated in `extension.ts` and often passed to Views (like `Sidebar`).
+    *   Receive action requests from Views (e.g., webview messages forwarded by `Sidebar.ts`) or from registered VS Code commands.
+    *   Orchestrate operations by calling Services and updating the `StateController`.
+
+*   **Command Registrations (`src/commands/*.ts`):**
+    *   Register VS Code commands (e.g., from the command palette or keybindings) and link them to actions in the Feature Controllers.
+
+*   **`Sidebar.ts` (Controller Aspects):**
+    *   The `handleWebviewMessage` method in `Sidebar.ts` also has controller-like responsibilities. It interprets messages from the webview and delegates actions to the appropriate Feature Controllers.
+    *   Crucially, it implements the path conversion rule: when receiving messages from the webview containing file paths, it converts **relative paths to absolute paths** using `ensureAbsolutePath` before passing them to other extension components (Controllers, Services, or for state updates).
+
+*   **`extension.ts` (`src/extension.ts`):**
+    *   The main activation point of the extension.
+    *   Initializes and wires together all core components (Models, Views, Controllers, Services).
+    *   Registers command handlers and UI providers.
+
+## State Management and Data Flow
+
+1.  **Initialization:**
+    *   `extension.ts` activates.
+    *   `StateController` is initialized with a default `ApplicationState`.
+    *   `ExtensionKeyValueStore` loads any persisted data.
+    *   `Sidebar` is initialized, may load initial data (e.g., API key status from `ExtensionKeyValueStore`) and update `StateController`.
+    *   `Sidebar` subscribes to `StateController.onDidChangeState`.
+
+2.  **User Interaction (e.g., in Sidebar Webview):**
+    *   User interacts with the `Sidebar` webview (e.g., clicks a button).
+    *   The webview's JavaScript sends a typed message (`WebviewToExtensionMessage`) to `Sidebar.ts`. This message might include data like form inputs or relative file paths.
+
+3.  **Message Handling (Extension Side):**
+    *   `Sidebar.ts#handleWebviewMessage` receives the message.
+    *   **Path Conversion:** If the message payload contains file paths, `Sidebar.ts` converts any relative paths to absolute paths using `this.ensureAbsolutePath(filePath)`.
+    *   The handler then typically calls a method on a relevant Feature Controller (e.g., `testGenerationController.runGenerateTestFlow(absoluteSourceFilePath, ...)`).
+
+4.  **Controller Logic:**
+    *   The Feature Controller processes the request.
+    *   It may call methods on Services (e.g., `TestGenerationService`) to perform business logic, which might involve AI Agents.
+
+5.  **State Update:**
+    *   The Controller (or Service) updates the application state by calling `stateController.updateState()` with a partial state object containing the changes. All paths within the state managed by `StateController` are absolute.
+
+6.  **State Propagation:**
+    *   `StateController` updates its internal state and then emits an `onDidChangeState` event, providing a deep copy of the new `ApplicationState` to all subscribers.
+
+7.  **View Update:**
+    *   `Sidebar.ts#handleStateChange` (subscribed to `onDidChangeState`) receives the new state.
+    *   `Sidebar.ts` sends a typed message (`ExtensionToWebviewMessage` of type `STATE_UPDATE`) to the webview, containing the new `ApplicationState` (with absolute paths).
+    *   The webview's JavaScript receives this message and updates the DOM to reflect the new state. If relative paths are needed for display, the webview JavaScript handles this conversion.
+
+## Adherence to Architectural Rules
+
+*   **Extension states ONLY use absolute paths:**
+    *   This is enforced by `StateController` and the practice of `Sidebar.ts` converting incoming relative paths from the webview to absolute paths before they are used by controllers or for state updates.
+
+*   **Sending path data to webview, we should send relative paths:**
+    *   Currently, `Sidebar.ts` sends the entire `ApplicationState` (which contains absolute paths) to the webview during `STATE_UPDATE`. The webview's JavaScript is then responsible for any necessary conversion to relative paths for display or internal use. For direct path parameters in other message types (if any were to be added sending paths to the webview), `Sidebar.ts` would use `this.toRelativePath(absPath)` to ensure compliance.
+
+*   **Do not create webview-only states; use the existing state; never maintain duplicated states:**
+    *   This is achieved by having `StateController` as the single source of truth. The webview is a reflection of this state and sends messages to the extension to request changes rather than managing its own independent, duplicated state.

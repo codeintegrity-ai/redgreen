@@ -1,0 +1,179 @@
+
+LLM Test‑Case Generation Guide — JUnit 5
+=======================================
+
+Purpose
+-------
+This file distills the key rules, APIs, and patterns an LLM needs to output
+**compilable, high‑quality JUnit 5 tests**.
+
+──────────────────────────────────────────────────────────────────────────────
+1  Essential Imports & Skeleton
+──────────────────────────────────────────────────────────────────────────────
+```java
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
+
+public class <ClassUnderTest>Test {
+
+    private <ClassUnderTest> subject;
+
+    @BeforeEach
+    void setUp() {
+        subject = new <ClassUnderTest>(/* dependencies */);
+    }
+
+    @Test
+    @DisplayName("<concise behaviour description>")
+    void whenCondition_expectOutcome() {
+        // Arrange … (given)
+
+        // Act … (when)
+
+        // Assert … (then)
+    }
+}
+```
+* Use **static import** of `Assertions.*` so calls compile without prefix.  
+* Test methods are `public` **or** package‑private; annotate with `@Test`.  
+* Test class can be package‑private, but public is safest for IDE discovery.
+
+──────────────────────────────────────────────────────────────────────────────
+2  Assertion Cheat‑Sheet (static methods)
+──────────────────────────────────────────────────────────────────────────────
+| Equality              | Identity           | Truthiness        | Nullity          | Arrays            |
+|-----------------------|--------------------|-------------------|------------------|-------------------|
+| `assertEquals`        | `assertSame`       | `assertTrue`      | `assertNull`     | `assertArrayEquals` |
+| `assertNotEquals`     | `assertNotSame`    | `assertFalse`     | `assertNotNull`  |                   |
+
+* `assertEquals/NotEquals` rely on `equals`; **don’t** use them for arrays—
+  use `assertArrayEquals` instead.
+
+──────────────────────────────────────────────────────────────────────────────
+3  Exception & Timeout Assertions
+──────────────────────────────────────────────────────────────────────────────
+```java
+assertThrowsExactly(ArithmeticException.class,
+                    () -> subject.divide(1, 0));
+
+assertDoesNotThrow(() -> subject.safeMethod());
+
+assertTimeout(Duration.ofSeconds(1),
+              () -> subject.slowOp());
+
+assertTimeoutPreemptively(Duration.ofMillis(500),
+                          () -> subject.blockingOp());
+```
+
+──────────────────────────────────────────────────────────────────────────────
+4  Lifecycle Fixtures
+──────────────────────────────────────────────────────────────────────────────
+* **Per‑test**  `@BeforeEach`, `@AfterEach`
+* **Class‑wide** `@BeforeAll`, `@AfterAll` (must be `static`)
+
+──────────────────────────────────────────────────────────────────────────────
+5  Parameterized Tests
+──────────────────────────────────────────────────────────────────────────────
+```java
+@ParameterizedTest
+@ValueSource(ints = {3, 5, 7})
+void isOdd_returnsTrue(int n) { assertTrue(subject.isOdd(n)); }
+
+@ParameterizedTest
+@CsvSource({"3,4,12", "2,5,10"})
+void multiply(int a,int b,int expected){
+    assertEquals(expected, subject.multiply(a,b));
+}
+
+@ParameterizedTest
+@CsvFileSource(resources = "/test-data.csv")
+void add_fromCsv(int a,int b,int expected){
+    assertEquals(expected, subject.add(a,b));
+}
+
+@ParameterizedTest
+@MethodSource("caseProvider")
+void subtract(int a,int b,int expected){
+    assertEquals(expected, subject.subtract(a,b));
+}
+static Stream<Arguments> caseProvider(){ … }
+```
+Special sources: `@NullSource`, `@EmptySource`, `@NullAndEmptySource`,  
+`@EnumSource`, multiple sources via `@ArgumentsSources`.
+
+──────────────────────────────────────────────────────────────────────────────
+6  Dynamic Tests
+──────────────────────────────────────────────────────────────────────────────
+```java
+@TestFactory
+Stream<DynamicTest> dynamicSubtract() {
+    return IntStream.of(3,7,14,93)
+        .mapToObj(n -> DynamicTest.dynamicTest(
+            "Subtract 4 from " + n,
+            () -> assertEquals(n - 4, subject.subtract(n,4))));
+}
+```
+
+──────────────────────────────────────────────────────────────────────────────
+7  Nested Tests
+──────────────────────────────────────────────────────────────────────────────
+```java
+@Nested
+class WhenInputIsInvalid {
+
+    @BeforeEach void givenInvalidArg(){ … }
+
+    @Test void throwsException(){ … }
+}
+```
+* Outer `@BeforeEach` runs **before** nested set‑up; order:
+  outer‑setup → inner‑setup → test.
+
+──────────────────────────────────────────────────────────────────────────────
+8  Test Suites (classic JUnit 4 runner API)
+──────────────────────────────────────────────────────────────────────────────
+```java
+@RunWith(Suite.class)
+@Suite.SuiteClasses({CalculatorTest.class, CalculatorUtilsTest.class})
+public class CalculatorTestSuite {}
+```
+
+──────────────────────────────────────────────────────────────────────────────
+9  Mockito Quick‑Start (for dependency isolation)
+──────────────────────────────────────────────────────────────────────────────
+```java
+UserService mockSvc = Mockito.mock(UserService.class);
+Mockito.when(mockSvc.getUserById(123))
+       .thenReturn(new UserInfo(123,"John"));
+
+User user = new User(123, mockSvc);
+assertEquals("John", user.getName());
+
+Mockito.verify(mockSvc).getUserById(123);
+```
+Maven:  
+```xml
+<dependency>
+  <groupId>org.mockito</groupId>
+  <artifactId>mockito-core</artifactId>
+  <version>5.3.0</version>
+  <scope>test</scope>
+</dependency>
+```
+
+──────────────────────────────────────────────────────────────────────────────
+10  Best‑Practice Checklist
+──────────────────────────────────────────────────────────────────────────────
+- **Single responsibility:** one behaviour per test.
+- **Arrange ‑ Act ‑ Assert** blocks & blank lines improve clarity.
+- **Descriptive names:** `whenX_expectY`, plus `@DisplayName`.
+- **Deterministic:** avoid randomness (or fix & document seed).
+- **Cover edge cases:** nulls, empty collections, boundaries.
+- **No implementation peeking:** assert public behaviour.
+- **Independent tests:** shared state reset in fixtures.
+- **Fast:** each test under 1 s; long IO mocked or guarded by timeout.
+- **Compilable out‑of‑the‑box:** every import present, no missing deps.
+
+──────────────────────────────────────────────────────────────────────────────
+End of Guide
+──────────────────────────────────────────────────────────────────────────────

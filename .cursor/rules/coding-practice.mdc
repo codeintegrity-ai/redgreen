@@ -1,0 +1,39 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+## Coding Practice Guidelines
+
+- Use Typescript
+- Only strict typings allowed
+
+**Error Handling:**  
+- Do not use fallbacks. Always throw clear error
+- Make sure you catch them
+
+**Code Quality:**  
+- Avoid unnecessary complexity.
+- Do not overengineer. Strive for low coupling and high cohesion in each module.
+- Write code that is easy to test—testable code only.
+- Do not generate redundant code.
+- Functions should never have side effects.
+- Remove old or dead code after making new changes.
+- Use strict types only.
+
+**SOLID Principles:**  
+- **S – Single Responsibility Principle (SRP):**  
+  Each class should have only one reason to change. Example: A `Report` class handles report generation, while a separate `ReportPrinter` class manages printing.
+- **O – Open/Closed Principle (OCP):**  
+  Software entities should be open for extension but closed for modification. Example: Instead of modifying a `Shape` class to add new shapes, create new subclasses like `Circle` or `Rectangle`.
+- **L – Liskov Substitution Principle (LSP):**  
+  Subclasses should be replaceable for their superclasses without affecting correctness. Example: If `Bird` is a superclass and `Sparrow` is a subclass, `Sparrow` should work wherever `Bird` is expected.
+- **I – Interface Segregation Principle (ISP):**  
+  Clients should not be forced to depend on interfaces they do not use. Prefer multiple specific interfaces over a single general-purpose one. Example: Instead of a bulky `Machine` interface, create separate `Printer`, `Scanner`, and `Fax` interfaces.
+- **D – Dependency Inversion Principle (DIP):**  
+  High-level modules should not depend on low-level modules; both should depend on abstractions. Example: A `PaymentProcessor` should depend on a `PaymentMethod` interface, not concrete classes like `CreditCardPayment` or `PayPalPayment`.
+
+**Project-Specific Rules:**  
+- Extension states should use absolute paths only. When sending path data to the webview, use relative paths. Convert back to absolute paths when receiving data from the webview to the extension side.
+- Do not create webview-only states. Use the existing state to avoid confusion and never maintain duplicated states.
+

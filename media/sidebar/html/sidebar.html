@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RedGreen Sidebar</title>
+    <link rel="stylesheet" type="text/css" href="{{cssUri}}">
+    <style>
+        /* Display control for different pages */
+        .page {
+            display: none;
+        }
+        .page.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Home page content -->
+    <div id="home-page" class="page">
+        <div class="sidebar-content">
+            <div id="test-generation-status" class="test-generation-status">
+                <h3>Test Generation</h3>
+                <div class="test-gen-info">
+                    <div class="source-file">
+                        <span class="label">Source:</span>
+                        <span id="source-file-path" class="value"></span>
+                    </div>
+                    <div class="test-file">
+                        <span class="label">Test:</span>
+                        <span id="test-file-path" class="value"></span>
+                    </div>
+                    <div class="status">
+                        <span class="label">Status:</span>
+                        <span id="test-gen-status" class="value">In progress...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Test command input and watch mode toggle in one row -->
+            <div class="test-command-container">
+                <div class="test-command-row">
+                    <input type="text" id="test-command-input" class="test-command-input" placeholder="Enter test command">
+                    <div class="watch-mode-toggle">
+                        <label class="switch">
+                            <input type="checkbox" id="watch-mode-checkbox">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Test output terminal -->
+            <div id="test-output-container" class="test-output-container">
+                <div class="test-status-indicator">
+                    <div class="status-legend">
+                        <div class="legend-item">
+                            <span class="legend-badge pass"></span>
+                            <span class="legend-text">Pass</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-badge fail"></span>
+                            <span class="legend-text">Fail</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-badge unknown"></span>
+                            <span class="legend-text">Error/Not Run</span>
+                        </div>
+                    </div>
+                    <div class="status-right">
+                        <span id="refresh-interval-text" class="refresh-interval-text">Refreshed every 5s</span>
+                        <div id="test-status-badge" class="status-badge unknown">Not Run</div>
+                    </div>
+                </div>
+                
+                <div id="test-output-terminal" class="test-output-terminal">
+                    <pre id="test-output-text"></pre>
+                    <div id="test-output-loading-spinner" class="test-output-loading-spinner" style="display:none;"></div>
+                </div>
+
+                <!-- Copy Error button above Autofix -->
+                <div id="copy-error-button" class="copy-error-btn">Copy</div>
+                <!-- Autofix button that appears when tests fail -->
+                <div id="autofix-button" class="autofix-button">
+                    <span class="autofix-label">Autofix</span>
+                    <!-- Spinner will be injected here dynamically by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings page content -->
+    <div id="settings-page" class="page">
+        <div class="settings-header">
+            <h2 class="settings-title">Settings</h2>
+            <button class="vscode-button settings-save-btn">Save</button>
+        </div>
+        <div class="sidebar-content">
+            <div class="llm-config-section">
+                <h3 class="llm-config-title">LLM CONFIGURATION</h3>
+                <div class="form-group">
+                    <label for="api-provider">API Provider</label>
+                    <select id="api-provider" class="vscode-select">
+                        <option value="openai">OpenAI</option>
+                        <option value="codex">...Coming Soon!</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="api-key">API Key</label>
+                    <input id="api-key" class="vscode-input" type="text" placeholder="Enter API Key..." />
+                </div>
+            </div>
+
+            <div class="test-config-section">
+                <h3 class="test-config-title">TEST CONFIGURATION</h3>
+                <div class="test-mappings-group">
+                    <label>Test Mappings</label>
+                    <div class="test-mappings-tree">
+                        <!-- Nested mapping UI: source file with nested test file -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set the active page based on URL parameter
+        function setActivePage() {
+            // Get the page parameter from the URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const page = urlParams.get('page') || 'home';
+            
+            // Hide all pages first
+            document.querySelectorAll('.page').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Show the selected page
+            const pageElement = document.getElementById(`${page}-page`);
+            if (pageElement) {
+                pageElement.classList.add('active');
+            }
+        }
+        
+        // Run page setup when DOM is loaded
+        document.addEventListener('DOMContentLoaded', setActivePage);
+    </script>
+    <script src="{{jsUri}}"></script>
+    <!-- Injected by Sidebar.ts with the initial state -->
+    <!-- <script>window.initialGlobalState = JSON.parse('{{initialState}}');</script> -->
+</body>
+</html> 

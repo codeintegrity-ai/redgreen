@@ -1,0 +1,134 @@
+{
+  "name": "redgreen",
+  "displayName": "redgreen",
+  "description": "Generate tests, fix bugs, and refactor code with AI",
+  "publisher": "codeintegrity",
+  "icon": "images/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/codeintegrity/redgreen"
+  },
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Testing",
+    "Programming Languages",
+    "Other"
+  ],
+  "keywords": [
+    "test",
+    "testing",
+    "coverage",
+    "code-coverage",
+    "ai",
+    "test-generation",
+    "tdd",
+    "unit-testing",
+    "unit-test",
+    "automated-testing",
+    "test-automation",
+    "jest",
+    "mocha",
+    "pytest",
+    "junit",
+    "quality-assurance",
+    "qa",
+    "test-driven-development",
+    "red-green-refactor",
+    "integration-testing",
+    "test-suite"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "redgreen.generateTest",
+        "title": "Generate Test"
+      },
+      {
+        "command": "redgreen.home",
+        "title": "Home",
+        "icon": "$(home)"
+      },
+      {
+        "command": "redgreen.settings",
+        "title": "Settings",
+        "icon": "$(gear)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "redgreen.home",
+          "when": "view == redgreen.sidebarView",
+          "group": "navigation"
+        },
+        {
+          "command": "redgreen.settings",
+          "when": "view == redgreen.sidebarView",
+          "group": "navigation"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "redgreen-sidebar-container",
+          "title": "RedGreen",
+          "icon": "$(rocket)"
+        }
+      ]
+    },
+    "views": {
+      "redgreen-sidebar-container": [
+        {
+          "id": "redgreen.sidebarView",
+          "type": "webview",
+          "name": "RedGreen"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "npm run check-types && npm run lint && node esbuild.js",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "npm run check-types && npm run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@types/nunjucks": "^3.2.6",
+    "@types/vscode": "^1.95.0",
+    "@typescript-eslint/eslint-plugin": "^8.31.1",
+    "@typescript-eslint/parser": "^8.31.1",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.5.2",
+    "esbuild": "^0.25.3",
+    "eslint": "^9.25.1",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@openai/codex": "^0.1.2505172129",
+    "nunjucks": "^3.2.4",
+    "repomix": "^0.3.6"
+  },
+  "bugs": {
+    "url": "https://github.com/codeintegrity/redgreen/issues"
+  },
+  "license": "Apache-2.0"
+}

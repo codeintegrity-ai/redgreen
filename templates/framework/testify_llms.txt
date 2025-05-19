@@ -1,0 +1,200 @@
+Testify LLM Test Generation Guide
+=================================
+
+Purpose
+-------
+Provide clear, canonical guidance so a Large Language Model (LLM) can emit **Go** test files
+that compile, run, and produce helpful diagnostics using the *stretchr/testify* ecosystem.
+
+--------------------------------------------------------------------
+1. Project Setup
+--------------------------------------------------------------------
+• Initialise a Go module in the project root:  
+    go mod init <module‑path>
+
+• Add Testify packages **only as required**:  
+    go get github.com/stretchr/testify/assert        # general assertions  
+    go get github.com/stretchr/testify/require       # fatal assertions  
+    go get github.com/stretchr/testify/mock          # mocks & stubs  
+    go get github.com/stretchr/testify/suite         # test‑suite framework
+
+--------------------------------------------------------------------
+2. File & Package Conventions
+--------------------------------------------------------------------
+• Name test files with `_test.go` suffix.  
+• Keep tests in the same package as the code under test **unless** black‑box testing is desired,
+  in which case use `package xxx_test`.  
+• A minimal test skeleton:
+
+    // calc_test.go
+    package calc
+
+    import (
+        "testing"
+        "github.com/stretchr/testify/assert"
+    )
+
+    func TestAdd(t *testing.T) {
+        got := Add(2, 3)
+        assert.Equal(t, 5, got, "Add(2,3) should return 5")
+    }
+
+--------------------------------------------------------------------
+3. Assertions (github.com/stretchr/testify/assert)
+--------------------------------------------------------------------
+• `assert.Equal(t, expected, actual[, msgFmt, args …])`
+• `assert.NotEqual, True, False, Nil, NotNil`
+• Collections:  
+  – `assert.ElementsMatch(t, expectedSlice, actualSlice)` (order‑independent)  
+  – `assert.Subset(t, supersetSlice, subsetSlice)`
+• Error helpers:  
+  – `assert.NoError(t, err)`  
+  – `assert.Error(t, err)`  
+  – `assert.EqualError(t, err, "msg")`
+
+⚠ *assert* lets the test continue after failure so multiple conditions are reported.
+
+--------------------------------------------------------------------
+4. Fatal Assertions (github.com/stretchr/testify/require)
+--------------------------------------------------------------------
+Identical API to *assert* but aborts the current test on failure (calls `t.FailNow()`).
+Use for **pre‑conditions** without which further checks would panic or be meaningless.
+
+--------------------------------------------------------------------
+5. Table‑Driven Tests
+--------------------------------------------------------------------
+Use `t.Run(caseName, func(t *testing.T){ … })` inside a loop.
+
+    cases := []struct{
+        name  string
+        in    string
+        want  bool
+    }{
+        {"valid","user@example.com",true},
+        {"missing‑at","userexample.com",false},
+    }
+
+    for _, c := range cases {
+        t.Run(c.name, func(t *testing.T){
+            got := IsValidEmail(c.in)
+            assert.Equal(t, c.want, got, "IsValidEmail(%q)", c.in)
+        })
+    }
+
+--------------------------------------------------------------------
+6. Test Suites (github.com/stretchr/testify/suite)
+--------------------------------------------------------------------
+Embed `suite.Suite` in a struct to share setup/teardown across related tests.
+
+    type DBTestSuite struct {
+        suite.Suite
+        db *Database
+    }
+
+    func (s *DBTestSuite) SetupSuite()    { /* one‑time global init */ }
+    func (s *DBTestSuite) TearDownSuite() { /* global cleanup       */ }
+    func (s *DBTestSuite) SetupTest()     { s.db = NewTestDB()     }
+    func (s *DBTestSuite) TearDownTest()  { s.db.Close()           }
+
+    func (s *DBTestSuite) TestInsert() {
+        err := s.db.Insert("k","v")
+        s.NoError(err)
+    }
+
+    func TestDBSuite(t *testing.T) {
+        suite.Run(t, new(DBTestSuite))
+    }
+
+Inside suite methods use `s.Equal`, `s.NoError`, etc. — they map to assert helpers with
+automatic `t` forwarding.
+
+--------------------------------------------------------------------
+7. Mocks (github.com/stretchr/testify/mock)
+--------------------------------------------------------------------
+1. Define an interface in production code.  
+2. Create a test‑only struct embedding `mock.Mock` that implements that interface.  
+3. In each mock method call `m.Called(args…)` and translate returns.
+
+Example:
+
+    type DataStore interface {
+        GetUser(id string) (*User, error)
+        SaveUser(u *User) error
+    }
+
+    type MockStore struct{ mock.Mock }
+
+    func (m *MockStore) GetUser(id string)(*User,error){
+        args := m.Called(id)
+        if u := args.Get(0); u != nil {
+            return u.(*User), args.Error(1)
+        }
+        return nil, args.Error(1)
+    }
+
+Expectation & verification:
+
+    st := new(MockStore)
+    st.On("GetUser","123").Return(&User{ID:"123"}, nil)
+    st.AssertExpectations(t)
+
+Useful matchers: `mock.Anything`, `mock.AnythingOfType("string")`,
+`mock.MatchedBy(func(x *User) bool { return x.Email != "" })`.
+
+--------------------------------------------------------------------
+8. HTTP Handler Testing
+--------------------------------------------------------------------
+Combine `net/http/httptest` with Testify:
+
+    req  := httptest.NewRequest(http.MethodGet, "/hello", nil)
+    resp := httptest.NewRecorder()
+    HelloHandler(resp, req)
+
+    assert.Equal(t, http.StatusOK, resp.Code)
+    assert.JSONEq(t, `{"message":"Hello, World!"}`, resp.Body.String())
+
+--------------------------------------------------------------------
+9. Best‑Practice Checklist for LLM‑Generated Tests
+--------------------------------------------------------------------
+☑ Import **only** necessary Testify sub‑packages.  
+☑ Include `t.Parallel()` at the top of independent tests for concurrency.  
+☑ Use `require.*` for setup steps whose failure would nil‑pointer panic later.  
+☑ Prefer table‑driven style for pure functions with many input variants.  
+☑ Ensure mocks have `AssertExpectations(t)` in `defer` or at end of test.  
+☑ Provide descriptive failure messages — they surface in CI logs.  
+☑ Keep each logical expectation in its own assertion; avoid combining checks.  
+☑ Guarantee compilation: resolve all identifiers, run `go vet ./...` and `go test ./...`.
+
+--------------------------------------------------------------------
+10. Minimal Template for LLM Output
+--------------------------------------------------------------------
+```go
+// <feature>_test.go
+package <package>
+
+import (
+    "testing"
+
+    "github.com/stretchr/testify/assert"
+    "github.com/stretchr/testify/require"
+)
+
+func Test<Feature>(t *testing.T) {
+    t.Parallel()
+
+    // Arrange
+    input := <input>
+    expected := <want>
+
+    // Act
+    got, err := <FunctionUnderTest>(input)
+
+    // Assert
+    require.NoError(t, err)
+    assert.Equal(t, expected, got)
+}
+```
+
+--------------------------------------------------------------------
+End of Guide
+--------------------------------------------------------------------

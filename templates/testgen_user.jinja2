@@ -1,0 +1,55 @@
+## Context
+{% if context %}
+Here are all the relevant files in the project inside '{{rootDir}}':
+<context>
+{{ context }}
+</context>
+{% endif %}
+
+Directory tree in '{{rootDir}}':
+<directory_tree>
+{{directoryTree}}
+</directory_tree>
+
+
+First, let's review the source file related to the test file: '{{sourceFilePath}}'
+
+<source_file_content>
+{{sourceFileContent}}
+</source_file_content>
+
+Now, let's focus on the specific method and its details in '{{sourceFilePath}}':
+
+<language>{{language}}</language>
+<root_directory>{{rootDir}}</root_directory>
+<source_file_path>{{sourceFilePath}}</source_file_path>
+<test_file_path>{{testFilePath}}</test_file_path>
+<method_name>{{methodName}}</method_name>
+
+
+Here's the code for the target method '{{methodName}}' in '{{sourceFilePath}}' to be tested:
+
+<method_code>
+{{methodCode}}
+</method_code>
+
+{% if testFileContent %}
+Please generate the updated test file with the new tests. 
+DO NOT generate more than 3 unit tests.
+Do not modify existing tests.
+<test_file_content>
+{{testFileContent}}
+</test_file_content>
+{% endif %}
+
+# Output Format
+
+<test_planning>
+... your test planning here ...
+</test_planning>
+
+
+```{{language}}
+your full test file content here
+```
+

@@ -1,0 +1,80 @@
+LLM Best Practices for Generating High‑Quality Jest Tests
+========================================================
+
+1. Provide Full Context
+   • Include the source file or component code in the prompt so the LLM sees the public API and internal behavior.  
+   • Describe external services, environment variables, or fixtures the code relies on.
+
+2. Use Descriptive Names
+   • Group related cases in `describe()` blocks (feature or scenario).  
+   • Phrase each `it()`/`test()` title in BDD style – *“given … when … then …”* – to encode intent.
+
+3. Follow the Arrange‑Act‑Assert (AAA) Pattern
+   • **Arrange** – set up inputs, mocks, spies, and test data.  
+   • **Act** – execute the function, method, or component under test.  
+   • **Assert** – verify outputs, side‑effects, and interactions.  
+   • Keep one logical assertion group per test; split additional scenarios into new tests.
+
+4. Isolate Tests
+   • Reset shared state with `beforeEach` / `afterEach`.  
+   • Call `jest.resetAllMocks()` (or `jest.clearAllMocks()` for counts) to avoid leakage.  
+   • Prefer pure functions and dependency injection; mock global IO (network, fs, DB).
+
+5. Mock Responsibly
+   • Use `jest.mock(<module>)` for static imports.  
+   • Use `jest.spyOn(obj, "method")` when only a specific function needs stubbing.  
+   • Always restore with `mockRestore()` or `afterEach(() => jest.resetModules())`.
+
+6. Cover Asynchronous Logic
+   • Use `async/await` and return the promise from the test.  
+   • For callback APIs, accept a `done` argument and call it after assertions.  
+   • Combine `jest.useFakeTimers()` with `await jest.runAllTimersAsync()` to test timers and debounced code.
+
+7. Parameterize Edge Cases
+   • Use `test.each(table)(name, fn)` to sweep valid, boundary, and invalid inputs without copy‑pasting.  
+   • Document what each row represents.
+
+8. Snapshot with Intent
+   • Snapshots should be small and focused (specific component, plain objects).  
+   • Store alongside the test for discoverability.  
+   • Review snapshot diffs; update only on intentional UI changes.
+
+9. React Testing Library Guidelines
+   • Query by accessible role, text, or label—not implementation details (`getByRole`, `getByText`).  
+   • Avoid fixed `data-testid` except for truly non‑visible elements.  
+   • Favor `user-event` to simulate real user interactions.
+
+10. Timers & Dates
+    • Replace real timers with `jest.useFakeTimers()`, then advance time (`jest.advanceTimersByTime(ms)`).  
+    • Mock `Date` with `jest.setSystemTime()` (Jest 29+) for deterministic tests.
+
+11. Coverage & Quality Gates
+    • Add a `coverageThreshold` section in `jest.config.js` (e.g., branches 90, functions 90).  
+    • Track mutation score if you use tools like StrykerJS to ensure assertions are meaningful.
+
+12. Performance & Parallelization
+    • Keep test files independent so Jest can execute them in parallel workers.  
+    • Split large suites with tags or filename conventions (`*.int.test.js`, `*.unit.test.js`).  
+    • Run `--runInBand` only for debugging or when a global resource forces serialization.
+
+13. Prompt Engineering Template
+    ```
+    ### Your Task
+    Write Jest tests for the code below. Follow these rules:
+      1. Use Arrange–Act–Assert.
+      2. Achieve ≥90 % branch coverage (use `jest --coverage` to verify).
+      3. Cover success, edge, and failure paths.
+      4. Use `test.each` for data‑driven cases.
+      5. Mock external calls with `jest.mock`.
+      6. Use accessible queries if the code is React/RTL.
+      7. Ensure tests pass when run with `npm test`.
+    ### Code
+    <paste code here>
+    ```
+14. Validate & Iterate
+    • Run `jest --watch` locally; fix flaky tests immediately.  
+
+15. Continuous Integration Checklist
+    • Run `npm run lint`, `npm test`, and `npm run build` in CI.  
+    • Fail the pipeline on coverage or snapshot drift.  
+    • Cache node_modules and Jest’s transform cache for speed.

@@ -1,0 +1,17 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+## AI Code Generation Guidelines
+
+- **Think twice before generating**: Consider all implications and requirements before writing code.
+- **Make small, incremental changes**: Get approval before proceeding to the next change.
+- **Keep code under 10 lines**: Break down complex solutions into smaller parts.
+- **Prioritize simplicity**: Simple, readable code is better than clever, complex code.
+- **Use existing patterns**: Match the style and approach of the surrounding codebase.
+- **Focus on one task at a time**: Solve specific problems rather than making large-scale changes.
+- **Provide clear explanations**: Explain the reasoning behind implementation choices.
+- **Handle errors explicitly**: Don't use fallbacks; throw clear errors that can be caught.
+- **Use strict types only**: Maintain TypeScript's type safety throughout the codebase.
+- **Remove redundant code**: Don't duplicate existing functionality or leave dead code.

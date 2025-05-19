@@ -1,0 +1,63 @@
+# Pytest Best Practices — LLM Reference TXT
+# Consumed by AI code generators for high‑quality test synthesis
+# (Plain‑text, no Markdown rendering assumptions)
+
+1. SIMPLE TESTS
+- Test one behavior at a time
+- Single assertion
+- Descriptive function names
+
+GOOD:
+def test_make_a_dict():
+    assert make_a_dict(2, 3) == {"a": 2, "b": 3, "result": 5}
+
+def test_make_a_dict_negative_values():
+    with pytest.raises(ValueError):
+        make_a_dict(-1, -1)
+
+BAD:
+def test_dict():
+    assert make_a_dict(2, 3) == {"a": 2, "b": 3, "result": 5}
+    with pytest.raises(ValueError):
+        make_a_dict(-1, -1)
+
+2. ISOLATE WITH MOCKS
+- Patch collaborators, use autospec=True
+
+def test_make_a_dict(mocker):
+    mocker.patch("__main__.some_calculation", return_value=5, autospec=True)
+    assert make_a_dict(2, 3) == {"a": 2, "b": 3, "result": 5}
+
+3. DRY (Don’t Repeat Yourself)
+PARAMETRIZE:
+@pytest.mark.parametrize("a,b,expected", [(2,3,5), (-10,5,-5), (0,0,0)])
+def test_add_numbers(a, b, expected):
+    assert add_numbers(a, b) == expected
+
+FIXTURE:
+@pytest.fixture
+def person():
+    return Person("Emi")
+
+def test_person_is_adult(person):
+    person.age = 19
+    assert person.is_adult()
+
+4. TEST BEHAVIOR, NOT IMPLEMENTATION
+def test_added_user_can_be_retrieved():
+    repo = InMemoryUserRepository()
+    user = User(username="johndoe")
+    repo.add(user)
+    assert repo.get_by_username("johndoe") == user
+
+5. DON’T TEST THE FRAMEWORK
+# Skip tests that merely validate Django/Flask internals.
+
+6. autospec=True ENSURES SIGNATURE SAFETY WHEN PATCHING
+
+7. USE MARKERS
+@pytest.mark.slow          # long‑running
+@pytest.mark.integration    # external dependencies
+@pytest.mark.exhaustive     # very large param sets
+
+END OF FILE

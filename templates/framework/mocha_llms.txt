@@ -1,0 +1,75 @@
+Mocha Testing Best Practices for LLM‑Generated Tests
+============================================================
+
+1. **Structure Tests Clearly**
+   • Use Mocha’s BDD interface (`describe`, `it`) to group related behaviours.  
+   • Keep *one logical assertion per `it` block* to make failures obvious.  
+
+2. **Handle Asynchronous Code Reliably**
+   • Prefer `async/await` or returning a `Promise`; reserve the `done` callback for legacy cases.  
+   • Always assert that promises *reject* as well as resolve when appropriate.  
+
+3. **Keep Tests Deterministic & Independent**
+   • No test should rely on the side‑effects of another; reset state in `beforeEach`/`afterEach`.  
+   • Stub network, filesystem, timers, randomness, and dates so results are repeatable.  
+
+4. **Avoid Arrow Functions in `describe` / `it`**
+   • Use `function () { … }` so Mocha can bind its own context (`this.timeout`, `this.skip`).  
+
+5. **Use Expressive Assertions**
+   • Pair Mocha with Chai’s `expect`/`should` or Node’s `assert` for readability.  
+   • Assert on *behaviour*, not implementation details.  
+
+6. **Isolate Dependencies with Sinon**
+   • Use `sinon.stub`, `sinon.spy`, and `sinon.fake` to control external calls.  
+   • Restore stubs in `afterEach` to avoid leakage between tests.  
+
+7. **Leverage Hooks Wisely**
+   • `before` / `after` for expensive suite‑level setup & teardown.  
+   • `beforeEach` / `afterEach` for per‑test isolation.  
+
+8. **Use Parallel Mode Thoughtfully (Mocha ≥ 8)**
+   • Enable with `--parallel` to speed up large suites.  
+   • Ensure shared resources (DBs, ports, temp files) are uniquely namespaced per worker.  
+
+9. **Organise the Test Tree**
+   • Mirror your source tree: `test/unit/`, `test/integration/`, `test/e2e/`.  
+   • Name files `<subject>.spec.js` or `<subject>.test.js` for discovery.  
+
+10. **Control Timeouts**
+    • Set a sensible default (`mocha --timeout 4000`) and tune long‑running tests individually with `this.timeout(10000)`.  
+
+11. **Measure Coverage & Enforce Thresholds**
+    • Run under Istanbul/NYC: `nyc mocha`.  
+    • Fail CI if coverage drops below agreed thresholds (e.g. 80 %).  
+
+12. **Integrate with CI/CD**
+    • Add `npm test` to your GitHub Actions, GitLab CI, or other pipeline.  
+    • Cache `node_modules` and artefacts to improve speed.  
+
+13. **TypeScript Support**
+    • Run with `ts-node/register` (CJS) or `--loader ts-node/esm` (ESM).  
+    • Include `@types/mocha` & `@types/chai` for typings.  
+
+14. **ES Modules & Browser Bundles**
+    • From Mocha v10+, tests can be authored as ES modules (`.mjs`) without Babel.  
+    • Use `mocha --require jsdom-global/register` when DOM APIs are needed.  
+
+15. **Fail Fast & Filter Tests**
+    • Use `--bail` to stop on first failure in critical pipelines.  
+    • Use `.only` and `.skip` locally, but lint CI to forbid them in commits.  
+
+16. **Follow the AAA Pattern**
+    • *Arrange* inputs and mocks, *Act* by invoking the unit, *Assert* on outcomes.  
+
+17. **Document Edge Cases**
+    • Ensure tests cover happy paths, error conditions, and boundary values.  
+
+18. **Keep Output Noise Low**
+    • Log only when diagnosing; silence expected console output with stubs.  
+
+19. **Use Environment Configuration**
+    • Load secrets/config with `dotenv`; never hard‑code in tests.  
+
+20. **Ensure Reproducibility**
+    • Pin dependencies; use Docker or Volta to fix Node versions across CI and local machines.  
