@@ -211,9 +211,33 @@ export class TestGenerationController implements vscode.Disposable {
 
           progress.report({ message: 'Writing test file...', increment: 20 });
           const absTestFilePath = path.join(this.workspaceRoot, testFilePath);
+
+          // Read original content before overwriting
+          let originalContent = '';
+          try {
+            originalContent = await fsPromises.readFile(absTestFilePath, 'utf-8');
+          } catch (e) {
+            // If file does not exist, treat as empty
+            if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
+          }
+
+          // Write new AI-generated code
           await fsPromises.writeFile(absTestFilePath, testCode);
 
-          progress.report({ message: 'Opening test file...', increment: 20 });
+          // Create a temp file for the original content
+          const tempDoc = await vscode.workspace.openTextDocument({ language: path.extname(absTestFilePath).slice(1), content: originalContent });
+
+          // Open diff editor: left = original, right = updated
+          const leftUri = tempDoc.uri;
+          const rightUri = vscode.Uri.file(absTestFilePath);
+          await vscode.commands.executeCommand(
+            'vscode.diff',
+            leftUri,
+            rightUri,
+            `Original ↔ AI Generated: ${path.basename(testFilePath)}`,
+            { preview: false, viewColumn: vscode.ViewColumn.Beside }
+          );
+
           await this.updateTestGenerationStatus(
             sourceFilePath,
             testFilePath,
