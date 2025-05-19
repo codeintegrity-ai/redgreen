@@ -62,7 +62,10 @@ export default class GenerateTestCodeLensProvider
   ): vscode.CodeLens[] {
     return symbols.flatMap((symbol) => {
       const codeLenses: vscode.CodeLens[] = [];
-      if (symbol.kind === vscode.SymbolKind.Function) {
+      if (
+        symbol.kind === vscode.SymbolKind.Function ||
+        symbol.kind === vscode.SymbolKind.Method
+      ) {
         const methodName = symbol.name;
         if (isTestMethod(methodName) || isNonTestableMethod(methodName)) {
           return [];
