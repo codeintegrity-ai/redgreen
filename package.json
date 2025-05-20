@@ -6,7 +6,7 @@
   "icon": "images/icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/codeintegrity/redgreen"
+    "url": "https://github.com/codeintegrity-ai/redgreen"
   },
   "version": "0.0.1",
   "engines": {
@@ -128,7 +128,7 @@
     "repomix": "^0.3.6"
   },
   "bugs": {
-    "url": "https://github.com/codeintegrity/redgreen/issues"
+    "url": "https://github.com/codeintegrity-ai/redgreen/issues"
   },
   "license": "Apache-2.0"
 }
