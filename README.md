@@ -1,7 +1,7 @@
 # RedGreen
 
 <p align="center">
-  <img src="images/demo.gif" width="100%" />
+  <img src="https://raw.githubusercontent.com/codeintegrity-ai/redgreen/main/images/demo.gif" width="100%" />
 </p>
 
 **Build it right. Before you build it all.**
