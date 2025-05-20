@@ -7,6 +7,7 @@
 **Build it right. Before you build it all.**
 
 Achieve 100% test coverage in minutes with AI-powered test generation.
+This uses OpenAI's [codex-cli](https://github.com/openai/codex)'s agent capabilities to generate and fix the code
 
 ![Test](https://img.shields.io/badge/Test-lightgray)
 ![TDD](https://img.shields.io/badge/TDD-lightgray)

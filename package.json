@@ -1,7 +1,7 @@
 {
   "name": "redgreen",
   "displayName": "redgreen",
-  "description": "Generate tests, fix bugs, and refactor code with AI",
+  "description": "Generate tests, fix bugs, and refactor code with OpenAI's codex-cli",
   "publisher": "codeintegrity",
   "icon": "images/icon.png",
   "repository": {
@@ -15,9 +15,16 @@
   "categories": [
     "Testing",
     "Programming Languages",
-    "Other"
+    "AI"
   ],
   "keywords": [
+    "openai",
+    "codex",
+    "codex-cli",
+    "codex-agent",
+    "codex-agent-cli",
+    "codex-agent-cli-vscode",
+    "codex-agent-cli-vscode-extension",
     "test",
     "testing",
     "coverage",
